@@ -1,9 +1,11 @@
 from sqlalchemy import String, BigInteger
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import DateTime
 from datetime import datetime
 from typing import Optional
+from sqlalchemy.sql import func
+
 
 class Base(DeclarativeBase):
     pass
@@ -27,4 +29,6 @@ class Car(Base):
     car_number: Mapped[Optional[str]] = mapped_column(String(20), unique=True, nullable=True)
     car_vin: Mapped[Optional[str]] = mapped_column(String(30), unique=True, nullable=True)
 
-    datetime_found : Mapped[datetime] =  mapped_column(DateTime, default=datetime.now)
+    datetime_found : Mapped[datetime] =  mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now())
