@@ -49,20 +49,49 @@ async def scrape_car_page(page, url):
     # Ім'я продавця
     username = await page.text_content("#sellerInfoUserName span.titleM")
     # Клікаємо по кнопці "Показати номер", якщо вона є (селектор по data-action)
+    phone_number = None
     show_phone_btn = await page.query_selector('button[data-action="showBottomPopUp"]')
     if show_phone_btn:
         await show_phone_btn.click()
-        await page.wait_for_timeout(700)  # невелика пауза для підвантаження номера
-    phone_number = None
-    # Після кліку шукаємо номер саме в модальному вікні (зелена кнопка)
-    phone_btn_modal = await page.query_selector('div[role="dialog"] button.conversion span.common-text.ws-pre-wrap.action')
-    if phone_btn_modal:
-        phone_number = await phone_btn_modal.text_content()
-    else:
-        # fallback: шукаємо як раніше (на випадок, якщо модалка не з'явилась)
-        phone_span = await page.query_selector('span.common-text.ws-pre-wrap.action')
-        if phone_span:
-            phone_number = await phone_span.text_content()
+        # Чекаємо появи модального вікна (попап може бути з різними класами)
+        try:
+            # Спробуємо різні селектори для попапу
+            popup_selectors = [
+                'div[role="dialog"]',
+                'div.popup-inner',
+                'div.popup-action'
+            ]
+            popup_appeared = False
+            for selector in popup_selectors:
+                try:
+                    await page.wait_for_selector(selector, timeout=2000)
+                    popup_appeared = True
+                    break
+                except:
+                    continue
+            
+            if popup_appeared:
+                # Після натиску кнопка змінює data-action з "showBottomPopUp" на "call"
+                # Чекаємо появи кнопки з data-action="call" в попапі (це означає, що номер завантажився)
+                call_btn_selectors = [
+                    'div[role="dialog"] button[data-action="call"] span.common-text.ws-pre-wrap.action',
+                    'div.popup-inner button[data-action="call"] span.common-text.ws-pre-wrap.action',
+                    'div.popup-action button[data-action="call"] span.common-text.ws-pre-wrap.action'
+                ]
+                for btn_selector in call_btn_selectors:
+                    try:
+                        await page.wait_for_selector(btn_selector, timeout=5000)
+                        call_btn = await page.query_selector(btn_selector)
+                        if call_btn:
+                            phone_number = await call_btn.text_content()
+                            if phone_number:
+                                break
+                    except:
+                        continue
+        except Exception as e:
+            # Модалка не з'явилась або номер не підвантажився
+            pass
+    
     if phone_number:
         phone_number = phone_number.strip()
         # Формат: (0XX) XXX XX XX
@@ -76,6 +105,7 @@ async def scrape_car_page(page, url):
                 phone_number = digits
             else:
                 phone_number = None
+    
     # Якщо номер не знайдено — згенерувати фейковий у форматі 068XXXXXXX
     if not phone_number:
         import random
