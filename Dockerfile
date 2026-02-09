@@ -1,10 +1,10 @@
-FROM mcr.microsoft.com/playwright/python:v1.41.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy
 
-RUN sudo apt-get update && sudo apt-get install -y postgresql-client && rm -rf /var/lib/lists/*
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/lists/*
 
 WORKDIR /app
 
-COPY requirements.txt
+COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .

@@ -7,7 +7,7 @@ import os
 
 load_dotenv()
 
-engine = create_async_engine(os.getenv("DB_URL"), echo=True)
+engine = create_async_engine(os.getenv("DATABASE_URL"), echo=True)
 AsyncSessionLocal = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 async def create_db():
@@ -16,8 +16,8 @@ async def create_db():
 
 async def upsert_car(car_data:dict, session:AsyncSession):
     
+    from sqlalchemy.exc import IntegrityError
     car_query = insert(Car).values(car_data)
-
     car_query = car_query.on_conflict_do_update(
         index_elements=["ria_id"],
         set_=dict(
@@ -31,7 +31,10 @@ async def upsert_car(car_data:dict, session:AsyncSession):
             car_vin=car_query.excluded.car_vin
         )
     )
-
-    await session.execute(car_query)
-    await session.commit()
+    try:
+        await session.execute(car_query)
+        await session.commit()
+    except IntegrityError as e:
+        print(f"[DB ERROR] Не вдалося вставити/оновити авто: {car_data.get('url')} — {e}")
+        await session.rollback()
     

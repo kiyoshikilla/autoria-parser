@@ -23,11 +23,12 @@ class Car(Base):
     odometer : Mapped[int] = mapped_column(nullable=False)
     
     username : Mapped[Optional[str]] = mapped_column(String(100))
-    phone_number : Mapped[Optional[str]] = mapped_column(String(20))
+    phone_number : Mapped[Optional[str]] = mapped_column(String(100))
 
     image_url : Mapped[str] = mapped_column(String, nullable=False)
-    car_number: Mapped[Optional[str]] = mapped_column(String(20), unique=True, nullable=True)
-    car_vin: Mapped[Optional[str]] = mapped_column(String(30), unique=True, nullable=True)
+    images_count: Mapped[int] = mapped_column(nullable=False, default=1)
+    car_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    car_vin: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
 
     datetime_found : Mapped[datetime] =  mapped_column(
         DateTime(timezone=True),
